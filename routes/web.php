@@ -17,9 +17,11 @@ Route::middleware('guest')->group(function (): void {
 Route::middleware('auth')->group(function (): void {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::post('/profile', [AuthController::class, 'updateProfile'])->name('profile.update');
 
     Route::post('/notes', [HourlyNoteController::class, 'upsert'])->name('notes.upsert');
     Route::post('/chat', [ChatMessageController::class, 'store'])->name('chat.store');
+    Route::post('/chat/reset', [ChatMessageController::class, 'reset'])->name('chat.reset');
 
     Route::post('/associates', [AssociateController::class, 'store'])->name('associates.store');
     Route::delete('/associates/{associate}', [AssociateController::class, 'destroy'])->name('associates.destroy');

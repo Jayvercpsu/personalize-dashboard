@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AuthController extends Controller
@@ -43,5 +45,31 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    public function updateProfile(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:80'],
+            'email' => ['required', 'email', 'max:120', Rule::unique('users', 'email')->ignore($user->id)],
+            'password' => ['nullable', 'string', 'min:6', 'confirmed'],
+        ]);
+
+        $updates = [
+            'name' => trim($validated['name']),
+            'email' => trim($validated['email']),
+        ];
+
+        if (! empty($validated['password'])) {
+            $updates['password'] = Hash::make($validated['password']);
+        }
+
+        $user->update($updates);
+
+        return redirect()
+            ->route('dashboard', $this->dashboardContext($request))
+            ->with('success', 'Profile settings updated.');
     }
 }

@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 </head>
-<body class="{{ $bodyClass ?? 'app-shell' }}">
+<body class="{{ $bodyClass ?? '' }}">
     @yield('content')
 
     <script src="{{ asset('js/dashboard.js') }}"></script>

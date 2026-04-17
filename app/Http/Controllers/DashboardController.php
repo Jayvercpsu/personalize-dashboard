@@ -46,9 +46,11 @@ class DashboardController extends Controller
         $statusOverview['total'] = array_sum($statusOverview);
 
         $chatMessages = ChatMessage::query()
-            ->orderBy('created_at')
+            ->orderByDesc('created_at')
             ->take(150)
-            ->get();
+            ->get()
+            ->sortBy('created_at')
+            ->values();
 
         $associates = Associate::query()
             ->where('is_active', true)

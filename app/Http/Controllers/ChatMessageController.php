@@ -25,4 +25,13 @@ class ChatMessageController extends Controller
             ->route('dashboard', $this->dashboardContext($request))
             ->with('success', 'Message sent.');
     }
+
+    public function reset(Request $request): RedirectResponse
+    {
+        ChatMessage::query()->delete();
+
+        return redirect()
+            ->route('dashboard', $this->dashboardContext($request, ['section' => 'section-chat']))
+            ->with('success', 'Chat conversation reset.');
+    }
 }

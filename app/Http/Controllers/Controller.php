@@ -12,6 +12,14 @@ abstract class Controller
         $month = (string) $request->input('month', now()->format('Y-m'));
         $year = (int) $request->input('year', now()->year);
         $quarter = (int) $request->input('quarter', (int) ceil(now()->month / 3));
+        $section = (string) $request->input('section', 'section-notes');
+
+        $allowedSections = [
+            'section-notes',
+            'section-chat',
+            'section-schedule',
+            'section-process',
+        ];
 
         if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
             $date = now()->toDateString();
@@ -27,11 +35,16 @@ abstract class Controller
             $quarter = (int) ceil(now()->month / 3);
         }
 
+        if (! in_array($section, $allowedSections, true)) {
+            $section = 'section-notes';
+        }
+
         return array_merge([
             'date' => $date,
             'month' => $month,
             'year' => $year,
             'quarter' => $quarter,
+            'section' => $section,
         ], $overrides);
     }
 }
