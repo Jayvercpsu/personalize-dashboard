@@ -20,12 +20,12 @@
             @csrf
             <label>
                 <span>Email</span>
-                <input type="email" name="email" value="{{ old('email', 'test@gmail.com') }}" required autofocus>
+                <input type="email" name="email" value="{{ old('email') }}" required autofocus>
             </label>
 
             <label>
                 <span>Password</span>
-                <input type="password" name="password" value="test123" required>
+                <input type="password" name="password" required>
             </label>
 
             <label class="login-checkbox">
@@ -36,9 +36,6 @@
             <button type="submit" class="btn btn-primary btn-block">Login to Dashboard</button>
         </form>
 
-        <div class="login-hint">
-            <p><strong>Default Account:</strong> <code>test@gmail.com</code> / <code>test123</code></p>
-        </div>
     </section>
 </main>
 @endsection
