@@ -16,7 +16,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('login.attempt') }}" class="login-form">
+        <form method="POST" action="{{ route('login.attempt', [], false) }}" class="login-form">
             @csrf
             <label>
                 <span>Email</span>

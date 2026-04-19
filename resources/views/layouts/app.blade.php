@@ -9,11 +9,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ secure_asset('css/dashboard.css') }}">
 </head>
 <body class="{{ $bodyClass ?? '' }}">
     @yield('content')
 
-    <script src="{{ asset('js/dashboard.js') }}"></script>
+    <script src="{{ secure_asset('js/dashboard.js') }}"></script>
 </body>
 </html>
