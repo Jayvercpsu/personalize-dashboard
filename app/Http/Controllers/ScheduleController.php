@@ -44,10 +44,17 @@ class ScheduleController extends Controller
         $sunWedPool = $this->resolveActivePool($associates, $availableAssociates, $poolConfig['sun_wed'], true);
         $wedSatPool = $this->resolveActivePool($associates, $availableAssociates, $poolConfig['wed_sat'], true);
         $supportPool = $this->resolveActivePool($associates, $availableAssociates, $poolConfig['support'], true);
+        $partTimePool = $this->resolveActivePool($associates, $availableAssociates, $poolConfig['part_time'], false);
+        $partTimeIds = $partTimePool->pluck('id')->map(static fn ($id): int => (int) $id)->all();
+        $availableIds = $availableAssociates->pluck('id')->map(static fn ($id): int => (int) $id)->all();
+        $sunWedPoolIds = $sunWedPool->pluck('id')->map(static fn ($id): int => (int) $id)->all();
+        $wedSatPoolIds = $wedSatPool->pluck('id')->map(static fn ($id): int => (int) $id)->all();
 
         $sunWedQueue = $this->buildQueue($sunWedPool);
         $wedSatQueue = $this->buildQueue($wedSatPool);
         $supportQueue = $this->buildQueue($supportPool);
+        $fallbackMainQueue = $this->buildQueue($availableAssociates);
+        $fallbackSupportQueue = $this->buildQueue($availableAssociates);
 
         $daysInMonth = $month->daysInMonth;
 
@@ -55,12 +62,31 @@ class ScheduleController extends Controller
             $date = $month->copy()->day($dayNumber);
             $currentDate = $date->toDateString();
             $dayOfWeek = (int) $date->dayOfWeek;
+            $isWeekend = in_array($dayOfWeek, [0, 6], true);
+            $weekdayExclusions = $isWeekend ? [] : $partTimeIds;
 
-            $mainId = in_array($dayOfWeek, [0, 1, 2, 3], true)
-                ? $this->drawFromQueue($sunWedQueue, $sunWedPool)
-                : $this->drawFromQueue($wedSatQueue, $wedSatPool);
+            if (in_array($dayOfWeek, [0, 1, 2, 3], true)) {
+                $dayGroupIds = $sunWedPoolIds;
+                $mainId = $this->drawFromQueueExcluding($sunWedQueue, $sunWedPool, $weekdayExclusions);
+            } else {
+                $dayGroupIds = $wedSatPoolIds;
+                $mainId = $this->drawFromQueueExcluding($wedSatQueue, $wedSatPool, $weekdayExclusions);
+            }
 
-            $supportId = $this->drawFromQueueExcluding($supportQueue, $supportPool, [$mainId]);
+            $outsideDayGroupIds = array_values(array_diff($availableIds, $dayGroupIds));
+            $mainFallbackExclusions = $this->normalizeIds(array_merge($weekdayExclusions, $outsideDayGroupIds));
+
+            if ($mainId === null) {
+                $mainId = $this->drawFromQueueExcluding($fallbackMainQueue, $availableAssociates, $mainFallbackExclusions);
+            }
+
+            $supportExclusions = $this->normalizeIds(array_merge([$mainId], $weekdayExclusions, $outsideDayGroupIds));
+
+            $supportId = $this->drawFromQueueExcluding($supportQueue, $supportPool, $supportExclusions);
+
+            if ($supportId === null) {
+                $supportId = $this->drawFromQueueExcluding($fallbackSupportQueue, $availableAssociates, $supportExclusions);
+            }
 
             ScheduleDay::query()->updateOrCreate(
                 ['schedule_date' => $currentDate],
@@ -222,7 +248,7 @@ class ScheduleController extends Controller
 
         $pool = $this->buildPoolFromIds($associates, $eligibleIds);
 
-        if ($pool->isEmpty() && $fallbackToAvailable) {
+        if ($pool->isEmpty() && $fallbackToAvailable && empty($configuredIds)) {
             return $availableAssociates->values();
         }
 
