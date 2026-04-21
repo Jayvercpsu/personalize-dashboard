@@ -9,11 +9,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
+    <link
+        rel="stylesheet"
+        href="{{ asset('css/dashboard.css') }}?v={{ file_exists(public_path('css/dashboard.css')) ? filemtime(public_path('css/dashboard.css')) : time() }}"
+    >
 </head>
 <body class="{{ $bodyClass ?? '' }}">
     @yield('content')
 
-    <script src="{{ asset('js/dashboard.js') }}"></script>
+    <script src="{{ asset('js/dashboard.js') }}?v={{ file_exists(public_path('js/dashboard.js')) ? filemtime(public_path('js/dashboard.js')) : time() }}"></script>
 </body>
 </html>
