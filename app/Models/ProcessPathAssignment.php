@@ -16,6 +16,9 @@ class ProcessPathAssignment extends Model
         'quarter',
         'start_path',
         'end_path',
+        'path_1',
+        'path_2',
+        'path_3',
     ];
 
     public function associate(): BelongsTo

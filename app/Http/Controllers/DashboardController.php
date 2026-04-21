@@ -10,6 +10,7 @@ use App\Models\ProcessPathAssignment;
 use App\Models\ScheduleDay;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -57,6 +58,8 @@ class DashboardController extends Controller
             ->orderBy('name')
             ->get();
 
+        $rafflePoolIds = $this->loadRafflePoolIds($associates);
+
         $scheduleTheme = AppSetting::query()
             ->where('key', 'schedule_theme')
             ->value('value') ?? 'blue';
@@ -71,7 +74,7 @@ class DashboardController extends Controller
         $calendarEnd = $monthEnd->copy()->endOfWeek(Carbon::SUNDAY);
 
         $scheduleDays = ScheduleDay::query()
-            ->with(['shiftA', 'shiftB'])
+            ->with(['shiftA', 'shiftB', 'partTime'])
             ->whereBetween('schedule_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->get()
             ->keyBy(fn (ScheduleDay $day) => $day->schedule_date->toDateString());
@@ -113,10 +116,51 @@ class DashboardController extends Controller
             'statusOverview' => $statusOverview,
             'chatMessages' => $chatMessages,
             'associates' => $associates,
+            'rafflePoolIds' => $rafflePoolIds,
             'scheduleTheme' => $scheduleTheme,
             'calendarWeeks' => $calendarWeeks,
             'processAssignments' => $processAssignments,
             'context' => $context,
         ]);
+    }
+
+    private function loadRafflePoolIds(Collection $associates): array
+    {
+        $activeIds = array_map('intval', $associates->pluck('id')->all());
+        $activeLookup = array_fill_keys($activeIds, true);
+
+        $raw = AppSetting::query()
+            ->where('key', 'schedule_raffle_pools')
+            ->value('value');
+
+        $decoded = is_string($raw) ? json_decode($raw, true) : [];
+        if (! is_array($decoded)) {
+            $decoded = [];
+        }
+
+        return [
+            'sun_wed' => $this->filterPoolIds($decoded['sun_wed'] ?? [], $activeLookup),
+            'wed_sat' => $this->filterPoolIds($decoded['wed_sat'] ?? [], $activeLookup),
+            'part_time' => $this->filterPoolIds($decoded['part_time'] ?? [], $activeLookup),
+            'unavailable' => $this->filterPoolIds($decoded['unavailable'] ?? [], $activeLookup),
+        ];
+    }
+
+    private function filterPoolIds(mixed $ids, array $activeLookup): array
+    {
+        if (! is_array($ids)) {
+            return [];
+        }
+
+        $normalized = [];
+
+        foreach ($ids as $id) {
+            $intId = (int) $id;
+            if (isset($activeLookup[$intId])) {
+                $normalized[$intId] = true;
+            }
+        }
+
+        return array_map('intval', array_keys($normalized));
     }
 }

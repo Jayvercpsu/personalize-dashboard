@@ -14,6 +14,7 @@ class ScheduleDay extends Model
         'schedule_date',
         'shift_a_associate_id',
         'shift_b_associate_id',
+        'part_time_associate_id',
     ];
 
     protected $casts = [
@@ -28,5 +29,10 @@ class ScheduleDay extends Model
     public function shiftB(): BelongsTo
     {
         return $this->belongsTo(Associate::class, 'shift_b_associate_id');
+    }
+
+    public function partTime(): BelongsTo
+    {
+        return $this->belongsTo(Associate::class, 'part_time_associate_id');
     }
 }

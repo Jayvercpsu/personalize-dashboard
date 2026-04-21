@@ -13,7 +13,26 @@
         'gray' => 'Gray + White',
     ];
 
-    $pathOptions = ['SBC', 'SRC', 'CC'];
+    $chatRoleMeta = [
+        'manager' => [
+            'compose_label' => 'Send to Ronald from Manager',
+            'author_label' => 'Manager',
+            'button_class' => 'is-manager',
+        ],
+        'associate' => [
+            'compose_label' => 'Send to Manager from Ronald',
+            'author_label' => 'Ronald',
+            'button_class' => 'is-ronald',
+        ],
+    ];
+
+    $rafflePoolIds = array_merge([
+        'sun_wed' => [],
+        'wed_sat' => [],
+        'part_time' => [],
+        'unavailable' => [],
+    ], $rafflePoolIds ?? []);
+
     $activeSection = $context['section'] ?? 'section-notes';
 @endphp
 
@@ -116,6 +135,7 @@
                                 $displayHour = \Carbon\Carbon::createFromFormat('H:i', $note->hour_slot)->format('h:i A');
                                 $status = $note->status ?: 'pending';
                                 $noteText = $note->note ?? '';
+                                $managerComment = $note->manager_comment ?? '';
                             @endphp
                             <form method="POST" action="{{ route('notes.upsert') }}" class="note-card {{ $statusMeta[$status]['tone'] }}" data-note-card>
                                 @csrf
@@ -139,6 +159,16 @@
                                     placeholder="Write notes for this hour..."
                                     data-note-input
                                 >{{ $noteText }}</textarea>
+
+                                <div class="manager-note-block">
+                                    <p class="manager-note-label">Manager Comment</p>
+                                    <textarea
+                                        name="manager_comment"
+                                        class="note-textarea manager-note-textarea"
+                                        rows="2"
+                                        placeholder="Manager can leave comments for this note..."
+                                    >{{ $managerComment }}</textarea>
+                                </div>
 
                                 <div class="note-status-row">
                                     @foreach ($statusMeta as $statusKey => $meta)
@@ -173,7 +203,7 @@
                         @forelse ($chatMessages as $message)
                             <article class="chat-row {{ $message->sender_role === 'associate' ? 'is-associate' : 'is-manager' }}">
                                 <div class="chat-bubble">
-                                    <p class="chat-author">{{ ucfirst($message->sender_role) }}</p>
+                                    <p class="chat-author">{{ $chatRoleMeta[$message->sender_role]['author_label'] ?? ucfirst($message->sender_role) }}</p>
                                     <p class="chat-message">{!! nl2br(e($message->message)) !!}</p>
                                     <small>{{ $message->created_at->format('g:i A') }}</small>
                                 </div>
@@ -191,14 +221,16 @@
                         <input type="hidden" name="quarter" value="{{ $selectedQuarter }}">
                         <input type="hidden" name="section" value="section-chat">
 
+                        @php $selectedSenderRole = old('sender_role', 'manager'); @endphp
+
                         <div class="role-picker">
-                            <label>
-                                <input type="radio" name="sender_role" value="associate" checked>
-                                <span>Send as Associate</span>
+                            <label class="role-pill {{ $chatRoleMeta['manager']['button_class'] }}">
+                                <input type="radio" name="sender_role" value="manager" {{ $selectedSenderRole === 'manager' ? 'checked' : '' }}>
+                                <span>{{ $chatRoleMeta['manager']['compose_label'] }}</span>
                             </label>
-                            <label>
-                                <input type="radio" name="sender_role" value="manager">
-                                <span>Send as Manager</span>
+                            <label class="role-pill {{ $chatRoleMeta['associate']['button_class'] }}">
+                                <input type="radio" name="sender_role" value="associate" {{ $selectedSenderRole === 'associate' ? 'checked' : '' }}>
+                                <span>{{ $chatRoleMeta['associate']['compose_label'] }}</span>
                             </label>
                         </div>
 
@@ -219,7 +251,7 @@
                     <div class="panel-head">
                         <div>
                             <h3>Scheduling</h3>
-                            <p>Auto-assign rotation with manual per-day controls.</p>
+                            <p>Auto-raffle by shift group with manual overrides when someone is on vacation.</p>
                         </div>
                     </div>
 
@@ -280,6 +312,78 @@
                         @endforeach
                     </div>
 
+                    <form method="POST" action="{{ route('schedule.pools') }}" class="raffle-pool-form">
+                        @csrf
+                        <input type="hidden" name="date" value="{{ $selectedDate }}">
+                        <input type="hidden" name="month" value="{{ $selectedMonth->format('Y-m') }}">
+                        <input type="hidden" name="year" value="{{ $selectedYear }}">
+                        <input type="hidden" name="quarter" value="{{ $selectedQuarter }}">
+                        <input type="hidden" name="section" value="section-schedule">
+
+                        <div class="raffle-pool-head">
+                            <h4>Raffle Groups</h4>
+                            <p>Choose who belongs to each shift, then mark vacations under Skip Raffle.</p>
+                        </div>
+
+                        <div class="raffle-pool-table-wrap">
+                            <table class="raffle-pool-table">
+                                <thead>
+                                    <tr>
+                                        <th>Associate</th>
+                                        <th>Sun-Wed</th>
+                                        <th>Wed-Sat</th>
+                                        <th>Part-time (Sat-Sun)</th>
+                                        <th>Skip Raffle</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($associates as $associate)
+                                        <tr>
+                                            <td>{{ $associate->name }}</td>
+                                            <td>
+                                                <input
+                                                    type="checkbox"
+                                                    name="sun_wed_ids[]"
+                                                    value="{{ $associate->id }}"
+                                                    @checked(in_array($associate->id, $rafflePoolIds['sun_wed'], true))
+                                                >
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="checkbox"
+                                                    name="wed_sat_ids[]"
+                                                    value="{{ $associate->id }}"
+                                                    @checked(in_array($associate->id, $rafflePoolIds['wed_sat'], true))
+                                                >
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="checkbox"
+                                                    name="part_time_ids[]"
+                                                    value="{{ $associate->id }}"
+                                                    @checked(in_array($associate->id, $rafflePoolIds['part_time'], true))
+                                                >
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="checkbox"
+                                                    name="unavailable_ids[]"
+                                                    value="{{ $associate->id }}"
+                                                    @checked(in_array($associate->id, $rafflePoolIds['unavailable'], true))
+                                                >
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="raffle-pool-actions">
+                            <button type="submit" class="btn btn-secondary btn-sm">Save Raffle Groups</button>
+                            <small>Checked in Skip Raffle means vacation/unavailable for auto-assignment.</small>
+                        </div>
+                    </form>
+
                     <div class="schedule-scroll">
                         <div class="schedule-board schedule-theme-{{ $scheduleTheme }}">
                             <div class="calendar-header">
@@ -304,7 +408,7 @@
                                                 <input type="hidden" name="section" value="section-schedule">
 
                                                 <label>
-                                                    <span>A</span>
+                                                    <span>SW</span>
                                                     <select name="shift_a_associate_id">
                                                         <option value="">-</option>
                                                         @foreach ($associates as $associate)
@@ -316,11 +420,23 @@
                                                 </label>
 
                                                 <label>
-                                                    <span>B</span>
+                                                    <span>WS</span>
                                                     <select name="shift_b_associate_id">
                                                         <option value="">-</option>
                                                         @foreach ($associates as $associate)
                                                             <option value="{{ $associate->id }}" @selected(optional($schedule)->shift_b_associate_id === $associate->id)>
+                                                                {{ $associate->name }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </label>
+
+                                                <label>
+                                                    <span>PT</span>
+                                                    <select name="part_time_associate_id">
+                                                        <option value="">-</option>
+                                                        @foreach ($associates as $associate)
+                                                            <option value="{{ $associate->id }}" @selected(optional($schedule)->part_time_associate_id === $associate->id)>
                                                                 {{ $associate->name }}
                                                             </option>
                                                         @endforeach
@@ -343,7 +459,7 @@
                     <div class="panel-head">
                         <div>
                             <h3>Process Path</h3>
-                            <p>Quarterly path record per associate with printable history.</p>
+                            <p>Editable associate names with up to three process paths (P1, P2, P3).</p>
                         </div>
                         <form method="GET" action="{{ route('dashboard') }}" class="inline-form">
                             <input type="hidden" name="date" value="{{ $selectedDate }}">
@@ -375,34 +491,33 @@
                             <table class="process-table">
                                 <thead>
                                     <tr>
-                                        <th>Associate</th>
-                                        <th>1st Path</th>
-                                        <th>2nd Path</th>
+                                        <th>Associate Name</th>
+                                        <th>P1</th>
+                                        <th>P2</th>
+                                        <th>P3</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($associates as $index => $associate)
                                         @php
                                             $assignment = $processAssignments->get($associate->id);
-                                            $startPath = $assignment?->start_path ?? 'SBC';
-                                            $endPath = $assignment?->end_path ?? 'SRC';
+                                            $path1 = $assignment?->path_1 ?? $assignment?->start_path ?? '';
+                                            $path2 = $assignment?->path_2 ?? $assignment?->end_path ?? '';
+                                            $path3 = $assignment?->path_3 ?? '';
                                         @endphp
                                         <tr>
-                                            <td>{{ $associate->name }}</td>
                                             <td>
                                                 <input type="hidden" name="assignments[{{ $index }}][associate_id]" value="{{ $associate->id }}">
-                                                <select name="assignments[{{ $index }}][start_path]">
-                                                    @foreach ($pathOptions as $pathOption)
-                                                        <option value="{{ $pathOption }}" @selected($startPath === $pathOption)>{{ $pathOption }}</option>
-                                                    @endforeach
-                                                </select>
+                                                <input type="text" name="assignments[{{ $index }}][associate_name]" value="{{ old("assignments.$index.associate_name", $associate->name) }}" maxlength="80" required>
                                             </td>
                                             <td>
-                                                <select name="assignments[{{ $index }}][end_path]">
-                                                    @foreach ($pathOptions as $pathOption)
-                                                        <option value="{{ $pathOption }}" @selected($endPath === $pathOption)>{{ $pathOption }}</option>
-                                                    @endforeach
-                                                </select>
+                                                <input type="text" name="assignments[{{ $index }}][path_1]" value="{{ old("assignments.$index.path_1", $path1) }}" maxlength="80" placeholder="P1">
+                                            </td>
+                                            <td>
+                                                <input type="text" name="assignments[{{ $index }}][path_2]" value="{{ old("assignments.$index.path_2", $path2) }}" maxlength="80" placeholder="P2">
+                                            </td>
+                                            <td>
+                                                <input type="text" name="assignments[{{ $index }}][path_3]" value="{{ old("assignments.$index.path_3", $path3) }}" maxlength="80" placeholder="P3">
                                             </td>
                                         </tr>
                                     @endforeach

@@ -131,9 +131,10 @@
             <thead>
                 <tr>
                     <th style="width: 50px;">#</th>
-                    <th>Associate</th>
-                    <th>1st Path</th>
-                    <th>2nd Path</th>
+                    <th>Associate Name</th>
+                    <th>P1</th>
+                    <th>P2</th>
+                    <th>P3</th>
                 </tr>
             </thead>
             <tbody>
@@ -142,8 +143,9 @@
                     <tr>
                         <td>{{ $index + 1 }}</td>
                         <td>{{ $associate->name }}</td>
-                        <td><span class="badge">{{ $row?->start_path ?? '-' }}</span></td>
-                        <td><span class="badge">{{ $row?->end_path ?? '-' }}</span></td>
+                        <td><span class="badge">{{ $row?->path_1 ?? $row?->start_path ?? '-' }}</span></td>
+                        <td><span class="badge">{{ $row?->path_2 ?? $row?->end_path ?? '-' }}</span></td>
+                        <td><span class="badge">{{ $row?->path_3 ?? '-' }}</span></td>
                     </tr>
                 @endforeach
             </tbody>

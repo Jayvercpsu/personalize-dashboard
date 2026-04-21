@@ -28,6 +28,7 @@ Route::middleware('auth')->group(function (): void {
 
     Route::post('/schedule/generate', [ScheduleController::class, 'generateMonth'])->name('schedule.generate');
     Route::post('/schedule/update', [ScheduleController::class, 'updateDay'])->name('schedule.update');
+    Route::post('/schedule/pools', [ScheduleController::class, 'updatePools'])->name('schedule.pools');
     Route::post('/schedule/theme', [ScheduleController::class, 'setTheme'])->name('schedule.theme');
 
     Route::post('/process-path', [ProcessPathController::class, 'update'])->name('process-path.update');

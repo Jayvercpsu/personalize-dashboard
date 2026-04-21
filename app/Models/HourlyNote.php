@@ -13,6 +13,7 @@ class HourlyNote extends Model
         'note_date',
         'hour_slot',
         'note',
+        'manager_comment',
         'status',
     ];
 

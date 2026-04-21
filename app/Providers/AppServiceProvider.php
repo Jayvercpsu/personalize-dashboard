@@ -21,7 +21,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        URL::forceScheme('https');
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
+
         // Support older MySQL/MariaDB index limits (e.g. 1000 bytes).
         Schema::defaultStringLength(191);
     }

@@ -15,15 +15,24 @@ class HourlyNoteController extends Controller
             'note_date' => ['required', 'date'],
             'hour_slot' => ['required', 'regex:/^\d{2}:\d{2}$/'],
             'note' => ['nullable', 'string', 'max:5000'],
+            'manager_comment' => ['nullable', 'string', 'max:5000'],
             'status' => ['required', Rule::in(['resolved', 'pending', 'needs_manager_attention'])],
         ]);
 
         $note = trim((string) ($validated['note'] ?? ''));
+        $managerComment = trim((string) ($validated['manager_comment'] ?? ''));
         $wordCount = str_word_count($note);
+        $managerWordCount = str_word_count($managerComment);
 
         if ($wordCount > 600) {
             return back()
                 ->withErrors(['note' => 'Hourly note must not exceed 600 words.'])
+                ->withInput();
+        }
+
+        if ($managerWordCount > 600) {
+            return back()
+                ->withErrors(['manager_comment' => 'Manager comment must not exceed 600 words.'])
                 ->withInput();
         }
 
@@ -34,6 +43,7 @@ class HourlyNoteController extends Controller
             ],
             [
                 'note' => $note,
+                'manager_comment' => $managerComment,
                 'status' => $validated['status'],
             ]
         );

@@ -571,6 +571,28 @@ p {
     max-height: 260px;
 }
 
+.manager-note-block {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px dashed #bfd6ff;
+    border-radius: 11px;
+    background: #f5f9ff;
+}
+
+.manager-note-label {
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #1f4dbf;
+}
+
+.manager-note-textarea {
+    min-height: 74px;
+    max-height: 140px;
+}
+
 .note-status-row {
     margin-top: 10px;
     display: flex;
@@ -666,8 +688,8 @@ p {
 }
 
 .chat-row.is-manager .chat-bubble {
-    color: #27324e;
-    background: #eaf0fb;
+    color: #f4fff8;
+    background: linear-gradient(135deg, #16945f, #0f7b4f);
     border-top-left-radius: 8px;
 }
 
@@ -706,36 +728,50 @@ p {
 
 .role-picker {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 8px;
 }
 
-.role-picker label {
+.role-pill {
     position: relative;
 }
 
-.role-picker input {
+.role-pill input {
     position: absolute;
     opacity: 0;
 }
 
-.role-picker span {
+.role-pill span {
     display: block;
     border-radius: 999px;
-    border: 1px solid var(--line);
-    background: #f4f7ff;
+    border: 1px solid transparent;
     padding: 8px 10px;
     text-align: center;
     font-size: 13px;
     font-weight: 700;
-    color: #40507b;
+    color: #ffffff;
     cursor: pointer;
+    transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
 }
 
-.role-picker input:checked + span {
-    border-color: #4f78ff;
-    background: #e7efff;
-    color: #133cb9;
+.role-pill.is-manager span {
+    background: linear-gradient(135deg, #26ad74, #148154);
+}
+
+.role-pill.is-ronald span {
+    background: linear-gradient(135deg, #2f66ff, #1d47c6);
+}
+
+.role-pill input:not(:checked) + span {
+    opacity: 0.8;
+    filter: saturate(0.8) brightness(0.96);
+}
+
+.role-pill input:checked + span {
+    opacity: 1;
+    filter: none;
+    box-shadow: 0 0 0 3px rgba(21, 74, 190, 0.15);
+    transform: translateY(-1px);
 }
 
 .emoji-row {
@@ -760,6 +796,83 @@ p {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 10px;
     margin-bottom: 10px;
+}
+
+.raffle-pool-form {
+    margin-bottom: 12px;
+    border: 1px solid #d9e4ff;
+    border-radius: 14px;
+    background: #f8fbff;
+    padding: 11px;
+}
+
+.raffle-pool-head h4 {
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.raffle-pool-head p {
+    color: #5b6b93;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.raffle-pool-table-wrap {
+    overflow-x: auto;
+}
+
+.raffle-pool-table {
+    width: 100%;
+    min-width: 620px;
+    border-collapse: collapse;
+    border: 1px solid #dbe5ff;
+    border-radius: 10px;
+    background: #ffffff;
+}
+
+.raffle-pool-table th,
+.raffle-pool-table td {
+    border-bottom: 1px solid #e8eeff;
+    padding: 8px 10px;
+    text-align: center;
+    font-size: 13px;
+}
+
+.raffle-pool-table th:first-child,
+.raffle-pool-table td:first-child {
+    text-align: left;
+}
+
+.raffle-pool-table th {
+    background: #edf3ff;
+    color: #21386b;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.raffle-pool-table tr:last-child td {
+    border-bottom: 0;
+}
+
+.raffle-pool-table input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #295dff;
+}
+
+.raffle-pool-actions {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.raffle-pool-actions small {
+    color: #5f6f95;
+    font-size: 12px;
+    font-weight: 700;
 }
 
 .theme-picker {
@@ -925,7 +1038,7 @@ p {
 }
 
 .day-form label span {
-    width: 16px;
+    width: 24px;
     text-align: center;
     font-size: 12px;
     font-weight: 800;
@@ -974,9 +1087,10 @@ p {
     font-size: 14px;
 }
 
-.process-table td:first-child {
-    font-weight: 700;
-    color: #24386e;
+.process-table td input {
+    min-width: 120px;
+    padding: 7px 9px;
+    font-size: 13px;
 }
 
 .process-actions {
@@ -1515,10 +1629,6 @@ code {
         width: 100%;
     }
 
-    .role-picker {
-        grid-template-columns: 1fr;
-    }
-
     .theme-picker {
         display: grid;
         grid-template-columns: 1fr;
@@ -1536,6 +1646,11 @@ code {
     .associate-pill {
         width: 100%;
         justify-content: space-between;
+    }
+
+    .raffle-pool-actions {
+        flex-direction: column;
+        align-items: stretch;
     }
 
     .modal-card {

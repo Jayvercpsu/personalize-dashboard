@@ -81,23 +81,57 @@ class DatabaseSeeder extends Seeder
         $month = now()->startOfMonth();
         $associates = Associate::query()->where('is_active', true)->orderBy('name')->get()->values();
         $associateCount = $associates->count();
-        $rotation = 0;
+        $sunWedPool = $associates->slice(0, max(1, (int) ceil($associateCount / 2)))->values();
+        $wedSatPool = $associates->slice((int) floor($associateCount / 3))->values();
+        $partTimePool = $associates->slice(0, min(2, $associateCount))->values();
+
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'schedule_raffle_pools'],
+            ['value' => json_encode([
+                'sun_wed' => $sunWedPool->pluck('id')->all(),
+                'wed_sat' => $wedSatPool->pluck('id')->all(),
+                'part_time' => $partTimePool->pluck('id')->all(),
+                'unavailable' => [],
+            ])]
+        );
+
+        $sunWedRotation = 0;
+        $wedSatRotation = 0;
+        $partTimeRotation = 0;
 
         if ($associateCount > 0) {
             for ($day = 1; $day <= $month->daysInMonth; $day++) {
-                $date = $month->copy()->day($day)->toDateString();
-                $shiftA = $associates[$rotation % $associateCount];
-                $shiftB = $associateCount > 1 ? $associates[($rotation + 1) % $associateCount] : null;
+                $dateCursor = $month->copy()->day($day);
+                $date = $dateCursor->toDateString();
+                $dayOfWeek = (int) $dateCursor->dayOfWeek;
+
+                $shiftA = null;
+                $shiftB = null;
+                $partTime = null;
+
+                if (in_array($dayOfWeek, [0, 1, 2, 3], true) && $sunWedPool->isNotEmpty()) {
+                    $shiftA = $sunWedPool[$sunWedRotation % $sunWedPool->count()];
+                    $sunWedRotation++;
+                }
+
+                if (in_array($dayOfWeek, [3, 4, 5, 6], true) && $wedSatPool->isNotEmpty()) {
+                    $shiftB = $wedSatPool[$wedSatRotation % $wedSatPool->count()];
+                    $wedSatRotation++;
+                }
+
+                if (in_array($dayOfWeek, [0, 6], true) && $partTimePool->isNotEmpty()) {
+                    $partTime = $partTimePool[$partTimeRotation % $partTimePool->count()];
+                    $partTimeRotation++;
+                }
 
                 ScheduleDay::query()->updateOrCreate(
                     ['schedule_date' => $date],
                     [
-                        'shift_a_associate_id' => $shiftA->id,
+                        'shift_a_associate_id' => $shiftA?->id,
                         'shift_b_associate_id' => $shiftB?->id,
+                        'part_time_associate_id' => $partTime?->id,
                     ]
                 );
-
-                $rotation++;
             }
         }
 
@@ -113,13 +147,10 @@ class DatabaseSeeder extends Seeder
             ], [
                 'start_path' => $paths[$index % count($paths)],
                 'end_path' => $paths[($index + 1) % count($paths)],
+                'path_1' => $paths[$index % count($paths)],
+                'path_2' => $paths[($index + 1) % count($paths)],
+                'path_3' => $paths[($index + 2) % count($paths)],
             ]);
         }
-
-        AppSetting::query()->updateOrCreate([
-            'key' => 'schedule_rotation_offset',
-        ], [
-            'value' => (string) ($month->daysInMonth + 1),
-        ]);
     }
 }

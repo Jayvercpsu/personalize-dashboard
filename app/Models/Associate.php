@@ -33,4 +33,9 @@ class Associate extends Model
     {
         return $this->hasMany(ScheduleDay::class, 'shift_b_associate_id');
     }
+
+    public function partTimeSchedules(): HasMany
+    {
+        return $this->hasMany(ScheduleDay::class, 'part_time_associate_id');
+    }
 }
