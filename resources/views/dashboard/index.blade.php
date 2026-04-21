@@ -322,7 +322,7 @@
 
                         <div class="raffle-pool-head">
                             <h4>Raffle Groups</h4>
-                            <p>Set Main pools per day type and a Support/Backup pool, then mark vacations under Skip Raffle.</p>
+                            <p>Set Main pools per day type, keep Part-time associates visible, and assign Support/Backup pool.</p>
                         </div>
 
                         <div class="raffle-pool-table-wrap">
@@ -332,6 +332,7 @@
                                         <th>Associate</th>
                                         <th>Main Pool (Sun-Wed)</th>
                                         <th>Main Pool (Thu-Sat)</th>
+                                        <th>Part-time Associates</th>
                                         <th>Support / Backup Pool</th>
                                         <th>Skip Raffle</th>
                                     </tr>
@@ -362,6 +363,14 @@
                                                     name="part_time_ids[]"
                                                     value="{{ $associate->id }}"
                                                     @checked(in_array($associate->id, $rafflePoolIds['part_time'], true))
+                                                >
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="checkbox"
+                                                    name="support_ids[]"
+                                                    value="{{ $associate->id }}"
+                                                    @checked(in_array($associate->id, $rafflePoolIds['support'], true))
                                                 >
                                             </td>
                                             <td>

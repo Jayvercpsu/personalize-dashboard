@@ -55,7 +55,7 @@ class DatabaseSeeder extends Seeder
         );
 
         $today = now()->toDateString();
-        $hourSlots = collect(range(7, 16))
+        $hourSlots = collect(range(7, 18))
             ->map(fn (int $hour): string => sprintf('%02d:00', $hour));
 
         foreach ($hourSlots as $slot) {

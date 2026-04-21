@@ -43,7 +43,7 @@ class ScheduleController extends Controller
 
         $sunWedPool = $this->resolveActivePool($associates, $availableAssociates, $poolConfig['sun_wed'], true);
         $wedSatPool = $this->resolveActivePool($associates, $availableAssociates, $poolConfig['wed_sat'], true);
-        $supportPool = $this->resolveActivePool($associates, $availableAssociates, $poolConfig['part_time'], true);
+        $supportPool = $this->resolveActivePool($associates, $availableAssociates, $poolConfig['support'], true);
 
         $sunWedQueue = $this->buildQueue($sunWedPool);
         $wedSatQueue = $this->buildQueue($wedSatPool);
@@ -107,6 +107,8 @@ class ScheduleController extends Controller
             'wed_sat_ids.*' => ['integer', Rule::exists('associates', 'id')],
             'part_time_ids' => ['nullable', 'array'],
             'part_time_ids.*' => ['integer', Rule::exists('associates', 'id')],
+            'support_ids' => ['nullable', 'array'],
+            'support_ids.*' => ['integer', Rule::exists('associates', 'id')],
             'unavailable_ids' => ['nullable', 'array'],
             'unavailable_ids.*' => ['integer', Rule::exists('associates', 'id')],
         ]);
@@ -115,6 +117,7 @@ class ScheduleController extends Controller
             'sun_wed' => $this->normalizeIds($validated['sun_wed_ids'] ?? []),
             'wed_sat' => $this->normalizeIds($validated['wed_sat_ids'] ?? []),
             'part_time' => $this->normalizeIds($validated['part_time_ids'] ?? []),
+            'support' => $this->normalizeIds($validated['support_ids'] ?? []),
             'unavailable' => $this->normalizeIds($validated['unavailable_ids'] ?? []),
         ];
 
@@ -158,10 +161,16 @@ class ScheduleController extends Controller
             $decoded = [];
         }
 
+        $partTimeIds = $this->filterActiveIds($decoded['part_time'] ?? [], $activeLookup);
+        $supportIds = array_key_exists('support', $decoded)
+            ? $this->filterActiveIds($decoded['support'] ?? [], $activeLookup)
+            : $partTimeIds;
+
         return [
             'sun_wed' => $this->filterActiveIds($decoded['sun_wed'] ?? [], $activeLookup),
             'wed_sat' => $this->filterActiveIds($decoded['wed_sat'] ?? [], $activeLookup),
-            'part_time' => $this->filterActiveIds($decoded['part_time'] ?? [], $activeLookup),
+            'part_time' => $partTimeIds,
+            'support' => $supportIds,
             'unavailable' => $this->filterActiveIds($decoded['unavailable'] ?? [], $activeLookup),
         ];
     }

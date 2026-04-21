@@ -24,7 +24,7 @@ class DashboardController extends Controller
         $selectedYear = $context['year'];
         $selectedQuarter = $context['quarter'];
 
-        $hourSlots = collect(range(7, 16))
+        $hourSlots = collect(range(7, 18))
             ->map(fn (int $hour): string => sprintf('%02d:00', $hour));
 
         $existingNotes = HourlyNote::whereDate('note_date', $selectedDate)
@@ -138,10 +138,16 @@ class DashboardController extends Controller
             $decoded = [];
         }
 
+        $partTimeIds = $this->filterPoolIds($decoded['part_time'] ?? [], $activeLookup);
+        $supportIds = array_key_exists('support', $decoded)
+            ? $this->filterPoolIds($decoded['support'] ?? [], $activeLookup)
+            : $partTimeIds;
+
         return [
             'sun_wed' => $this->filterPoolIds($decoded['sun_wed'] ?? [], $activeLookup),
             'wed_sat' => $this->filterPoolIds($decoded['wed_sat'] ?? [], $activeLookup),
-            'part_time' => $this->filterPoolIds($decoded['part_time'] ?? [], $activeLookup),
+            'part_time' => $partTimeIds,
+            'support' => $supportIds,
             'unavailable' => $this->filterPoolIds($decoded['unavailable'] ?? [], $activeLookup),
         ];
     }
