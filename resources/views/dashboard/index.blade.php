@@ -251,7 +251,7 @@
                     <div class="panel-head">
                         <div>
                             <h3>Scheduling</h3>
-                            <p>Auto-raffle by shift group with manual overrides when someone is on vacation.</p>
+                            <p>Auto-assigns daily Main and Support names, with quick override when someone is absent.</p>
                         </div>
                     </div>
 
@@ -322,7 +322,7 @@
 
                         <div class="raffle-pool-head">
                             <h4>Raffle Groups</h4>
-                            <p>Choose who belongs to each shift, then mark vacations under Skip Raffle.</p>
+                            <p>Set Main pools per day type and a Support/Backup pool, then mark vacations under Skip Raffle.</p>
                         </div>
 
                         <div class="raffle-pool-table-wrap">
@@ -330,9 +330,9 @@
                                 <thead>
                                     <tr>
                                         <th>Associate</th>
-                                        <th>Sun-Wed</th>
-                                        <th>Wed-Sat</th>
-                                        <th>Part-time (Sat-Sun)</th>
+                                        <th>Main Pool (Sun-Wed)</th>
+                                        <th>Main Pool (Thu-Sat)</th>
+                                        <th>Support / Backup Pool</th>
                                         <th>Skip Raffle</th>
                                     </tr>
                                 </thead>
@@ -386,8 +386,9 @@
 
                     <div class="schedule-scroll">
                         <div class="schedule-board schedule-theme-{{ $scheduleTheme }}">
+                            <p class="schedule-auto-note">Main and Support selections save automatically.</p>
                             <div class="calendar-header">
-                                @foreach (['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as $dayName)
+                                @foreach (['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as $dayName)
                                     <div>{{ $dayName }}</div>
                                 @endforeach
                             </div>
@@ -408,8 +409,8 @@
                                                 <input type="hidden" name="section" value="section-schedule">
 
                                                 <label>
-                                                    <span>SW</span>
-                                                    <select name="shift_a_associate_id">
+                                                    <span>Main</span>
+                                                    <select name="shift_a_associate_id" class="day-assignment-select" onchange="this.form.submit()">
                                                         <option value="">-</option>
                                                         @foreach ($associates as $associate)
                                                             <option value="{{ $associate->id }}" @selected(optional($schedule)->shift_a_associate_id === $associate->id)>
@@ -420,8 +421,8 @@
                                                 </label>
 
                                                 <label>
-                                                    <span>WS</span>
-                                                    <select name="shift_b_associate_id">
+                                                    <span>Support</span>
+                                                    <select name="shift_b_associate_id" class="day-assignment-select" onchange="this.form.submit()">
                                                         <option value="">-</option>
                                                         @foreach ($associates as $associate)
                                                             <option value="{{ $associate->id }}" @selected(optional($schedule)->shift_b_associate_id === $associate->id)>
@@ -430,20 +431,6 @@
                                                         @endforeach
                                                     </select>
                                                 </label>
-
-                                                <label>
-                                                    <span>PT</span>
-                                                    <select name="part_time_associate_id">
-                                                        <option value="">-</option>
-                                                        @foreach ($associates as $associate)
-                                                            <option value="{{ $associate->id }}" @selected(optional($schedule)->part_time_associate_id === $associate->id)>
-                                                                {{ $associate->name }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </label>
-
-                                                <button type="submit" class="btn btn-ghost btn-xs">Save</button>
                                             </form>
                                         </article>
                                     @endforeach

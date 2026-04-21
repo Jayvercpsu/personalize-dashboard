@@ -43,11 +43,11 @@ class ScheduleController extends Controller
 
         $sunWedPool = $this->resolveActivePool($associates, $availableAssociates, $poolConfig['sun_wed'], true);
         $wedSatPool = $this->resolveActivePool($associates, $availableAssociates, $poolConfig['wed_sat'], true);
-        $partTimePool = $this->resolveActivePool($associates, $availableAssociates, $poolConfig['part_time'], false);
+        $supportPool = $this->resolveActivePool($associates, $availableAssociates, $poolConfig['part_time'], true);
 
         $sunWedQueue = $this->buildQueue($sunWedPool);
         $wedSatQueue = $this->buildQueue($wedSatPool);
-        $partTimeQueue = $this->buildQueue($partTimePool);
+        $supportQueue = $this->buildQueue($supportPool);
 
         $daysInMonth = $month->daysInMonth;
 
@@ -56,24 +56,18 @@ class ScheduleController extends Controller
             $currentDate = $date->toDateString();
             $dayOfWeek = (int) $date->dayOfWeek;
 
-            $shiftAId = in_array($dayOfWeek, [0, 1, 2, 3], true)
+            $mainId = in_array($dayOfWeek, [0, 1, 2, 3], true)
                 ? $this->drawFromQueue($sunWedQueue, $sunWedPool)
-                : null;
+                : $this->drawFromQueue($wedSatQueue, $wedSatPool);
 
-            $shiftBId = in_array($dayOfWeek, [3, 4, 5, 6], true)
-                ? $this->drawFromQueue($wedSatQueue, $wedSatPool)
-                : null;
-
-            $partTimeId = in_array($dayOfWeek, [0, 6], true)
-                ? $this->drawFromQueue($partTimeQueue, $partTimePool)
-                : null;
+            $supportId = $this->drawFromQueueExcluding($supportQueue, $supportPool, [$mainId]);
 
             ScheduleDay::query()->updateOrCreate(
                 ['schedule_date' => $currentDate],
                 [
-                    'shift_a_associate_id' => $shiftAId,
-                    'shift_b_associate_id' => $shiftBId,
-                    'part_time_associate_id' => $partTimeId,
+                    'shift_a_associate_id' => $mainId,
+                    'shift_b_associate_id' => $supportId,
+                    'part_time_associate_id' => null,
                 ]
             );
         }
@@ -89,7 +83,6 @@ class ScheduleController extends Controller
             'schedule_date' => ['required', 'date'],
             'shift_a_associate_id' => ['nullable', 'integer', Rule::exists('associates', 'id')],
             'shift_b_associate_id' => ['nullable', 'integer', Rule::exists('associates', 'id')],
-            'part_time_associate_id' => ['nullable', 'integer', Rule::exists('associates', 'id')],
         ]);
 
         ScheduleDay::query()->updateOrCreate(
@@ -97,13 +90,12 @@ class ScheduleController extends Controller
             [
                 'shift_a_associate_id' => $validated['shift_a_associate_id'] ?? null,
                 'shift_b_associate_id' => $validated['shift_b_associate_id'] ?? null,
-                'part_time_associate_id' => $validated['part_time_associate_id'] ?? null,
             ]
         );
 
         return redirect()
             ->route('dashboard', $this->dashboardContext($request))
-            ->with('success', 'Schedule updated.');
+            ->with('success', 'Main and support updated.');
     }
 
     public function updatePools(Request $request): RedirectResponse
@@ -256,6 +248,47 @@ class ScheduleController extends Controller
             $queue = $this->buildQueue($pool);
         }
 
+        $picked = array_shift($queue);
+
+        return is_numeric($picked) ? (int) $picked : null;
+    }
+
+    private function drawFromQueueExcluding(array &$queue, Collection $pool, array $excludedIds): ?int
+    {
+        if ($pool->isEmpty()) {
+            return null;
+        }
+
+        $excludedLookup = [];
+        foreach ($excludedIds as $id) {
+            $intId = (int) $id;
+            if ($intId > 0) {
+                $excludedLookup[$intId] = true;
+            }
+        }
+
+        $eligiblePool = $pool
+            ->filter(static fn (Associate $associate): bool => ! isset($excludedLookup[$associate->id]))
+            ->values();
+
+        if ($eligiblePool->isEmpty()) {
+            return null;
+        }
+
+        if (empty($queue)) {
+            $queue = $this->buildQueue($pool);
+        }
+
+        while (! empty($queue)) {
+            $picked = array_shift($queue);
+            $pickedId = is_numeric($picked) ? (int) $picked : null;
+
+            if ($pickedId !== null && ! isset($excludedLookup[$pickedId])) {
+                return $pickedId;
+            }
+        }
+
+        $queue = $this->buildQueue($eligiblePool);
         $picked = array_shift($queue);
 
         return is_numeric($picked) ? (int) $picked : null;

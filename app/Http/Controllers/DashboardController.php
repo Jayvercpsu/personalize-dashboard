@@ -74,7 +74,7 @@ class DashboardController extends Controller
         $calendarEnd = $monthEnd->copy()->endOfWeek(Carbon::SUNDAY);
 
         $scheduleDays = ScheduleDay::query()
-            ->with(['shiftA', 'shiftB', 'partTime'])
+            ->with(['shiftA', 'shiftB'])
             ->whereBetween('schedule_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->get()
             ->keyBy(fn (ScheduleDay $day) => $day->schedule_date->toDateString());
